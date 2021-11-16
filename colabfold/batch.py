@@ -1,4 +1,6 @@
 import json
+import pickle
+import os
 import logging
 import math
 import random
@@ -154,7 +156,7 @@ def predict_structure(
         # score complexes by ptmscore and sequences by plddt
         rank_by = "plddt" if len(sequences_lengths) == 1 else "ptmscore"
 
-    plddts, paes, ptmscore = [], [], []
+    plddts, paes, ptmscore, representations = [], [], [], []
     unrelaxed_pdb_lines = []
     relaxed_pdb_lines = []
     prediction_times = []
@@ -207,6 +209,7 @@ def predict_structure(
         for i in range(seq_len):
             paes_res.append(prediction_result["predicted_aligned_error"][i][:seq_len])
         paes.append(paes_res)
+        representations.append(prediction_result['representations'])
         if do_relax:
             from alphafold.relax import relax
             from alphafold.common import residue_constants
@@ -262,6 +265,7 @@ def predict_structure(
             "plddt": plddts[r],
             "pae": paes[r],
             "pTMscore": ptmscore,
+            "representations": representations
         }
     return out
 
@@ -385,15 +389,14 @@ def get_msa_and_templates(
     jobname: str,
     query_sequences: Union[str, List[str]],
     result_dir: Path,
-    msa_mode: str,
+    use_env: bool,
     use_templates: bool,
     pair_mode: str,
     host_url: str = DEFAULT_API_SERVER,
+    max_msa_depth: int = None
 ) -> Tuple[
     Optional[List[str]], Optional[List[str]], List[str], List[int], Mapping[str, Any]
 ]:
-
-    use_env = msa_mode == "MMseqs2 (UniRef+Environmental)"
     # remove duplicates before searching
     query_sequences = (
         [query_sequences] if isinstance(query_sequences, str) else query_sequences
@@ -444,25 +447,19 @@ def get_msa_and_templates(
             or pair_mode == "unpaired"
             or pair_mode == "unpaired+paired"
         ):
-            if msa_mode == "single_sequence":
-                a3m_lines = []
-                num = 101
-                for i, seq in enumerate(query_seqs_unique):
-                    a3m_lines.append(">" + str(num + i) + "\n" + seq)
-            else:
-                # find normal a3ms
-                a3m_lines = run_mmseqs2(
-                    query_seqs_unique,
-                    str(result_dir.joinpath(jobname)),
-                    use_env,
-                    use_pairing=False,
-                    host_url=host_url,
-                )
+            # find normal a3ms
+            a3m_lines = run_mmseqs2(
+                query_seqs_unique,
+                str(result_dir.joinpath(jobname)),
+                use_env,
+                use_pairing=False,
+                host_url=host_url,
+            )
         else:
             a3m_lines = None
 
     if pair_mode == "paired" or pair_mode == "unpaired+paired":
-        # find paired a3m if not a homooligomers
+        # find paired a3m if not a monomer
         if len(query_seqs_unique) > 1:
             paired_a3m_lines = run_mmseqs2(
                 query_seqs_unique,
@@ -472,7 +469,6 @@ def get_msa_and_templates(
                 host_url=host_url,
             )
         else:
-            # homooligomers
             num = 101
             paired_a3m_lines = []
             for i in range(0, query_seqs_cardinality[0]):
@@ -482,6 +478,8 @@ def get_msa_and_templates(
     else:
         paired_a3m_lines = None
 
+    if max_msa_depth is not None:
+        a3m_lines = ['>'.join(a3m_line.split('>')[:max_msa_depth]) for a3m_line in a3m_lines]
     return (
         a3m_lines,
         paired_a3m_lines,
@@ -535,13 +533,11 @@ def run(
             }
         )
     )
-    use_env = msa_mode == "MMseqs2 (UniRef+Environmental)"
-    use_msa = (
-        msa_mode == "MMseqs2 (UniRef only)"
-        or msa_mode == "MMseqs2 (UniRef+Environmental)"
-    )
 
-    write_bibtex(use_msa, use_env, use_templates, use_amber, result_dir)
+    use_env = msa_mode == "MMseqs2 (UniRef+Environmental)"
+
+    # TODO: What's going on with MSA mode?
+    write_bibtex(True, use_env, use_templates, use_amber, result_dir)
 
     model_runner_and_params = load_models_and_params(
         num_models,
@@ -597,7 +593,7 @@ def run(
                 jobname,
                 query_sequence,
                 result_dir,
-                msa_mode,
+                use_env,
                 use_templates,
                 pair_mode,
                 host_url,
@@ -707,6 +703,19 @@ def run(
             logger.error(f"Could not predict {jobname}. Not Enough GPU memory? {e}")
             continue
         plot_lddt(jobname, np_example["msa"], outs, np_example["msa"][0], result_dir)
+        pae_dict = dict()
+        plddt_dict = dict()
+        representation_dict = dict()
+        for model_name, model_dict in outs.items():
+            pae_dict[model_name] = model_dict['pae']
+            plddt_dict[model_name] = model_dict['plddt']
+            representation_dict[model_name] = model_dict['representations']  
+        with open(os.path.join(result_dir, f'{jobname}_predicted_alignment_error.pkl'), 'wb') as f:
+            pickle.dump(pae_dict, f)
+        with open(os.path.join(result_dir, f'{jobname}_representations.pkl'), 'wb') as f:
+            pickle.dump(representation_dict, f)
+        with open(os.path.join(result_dir, f'{jobname}_plddt.pkl'), 'wb') as f:
+            pickle.dump(plddt_dict, f)
         plot_predicted_alignment_error(jobname, num_models, outs, result_dir)
     logger.info("Done")
 
