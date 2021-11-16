@@ -1,0 +1,21 @@
+--- modules_orig.py	2021-11-16 20:36:19.936797787 +0100
++++ modules.py	2021-11-16 19:56:41.000000000 +0100
+@@ -142,8 +142,7 @@
+                is_training,
+                compute_loss=False,
+                ensemble_representations=False,
+-               return_representations=False
+-):
++               return_representations=True):
+ 
+     num_ensemble = jnp.asarray(ensembled_batch['seq_length'].shape[0])
+ 
+@@ -285,7 +284,7 @@
+       is_training,
+       compute_loss=False,
+       ensemble_representations=False,
+-      return_representations=False):
++      return_representations=True):
+     """Run the AlphaFold model.
+ 
+     Arguments:
