@@ -1,3 +1,5 @@
+Index: alphafold/model/modules.py
+===================================================================
 --- /opt/conda/envs/colabfold/lib/python3.7/site-packages/alphafold/model/modules.py	2021-11-16 20:36:19.936797787 +0100
 +++ modules.py	2021-11-16 19:56:41.000000000 +0100
 @@ -142,8 +142,7 @@
