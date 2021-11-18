@@ -9,7 +9,7 @@ import time
 from argparse import ArgumentParser
 from pathlib import Path
 from typing import Any, Dict, Tuple, List, Union, Mapping, Optional
-
+import cv2
 import haiku
 import numpy as np
 import pandas
@@ -149,6 +149,7 @@ def predict_structure(
     rank_by: str = "auto",
     random_seed: int = 0,
     stop_at_score: float = 100,
+        only_representations: bool = True
 ):
     """Predicts structure using AlphaFold for the given sequence."""
     # Run the models.
@@ -180,16 +181,23 @@ def predict_structure(
         else:
             input = processed_feature_dict
 
+        start = time.time()
+
         prediction_result, (_, _) = model_runner.predict(input)
 
-        start = time.time()
         # The original alphafold only returns the prediction_result,
         # but our patched alphafold also returns a tuple (recycles,tol)
 
         prediction_time = time.time() - start
         prediction_times.append(prediction_time)
+        representations.append(prediction_result['representations'])
+        if only_representations:
+            continue
 
         mean_plddt = np.mean(prediction_result["plddt"][:seq_len])
+        plddts.append(prediction_result["plddt"][:seq_len])
+
+
         logger.info(
             f"{model_name} took {prediction_time:.1f}s with pLDDT {mean_plddt :.1f}"
         )
@@ -202,14 +210,13 @@ def predict_structure(
             remove_leading_feature_dimension=not model_runner.multimer_mode,
         )
         unrelaxed_pdb_lines.append(protein.to_pdb(unrelaxed_protein))
-        plddts.append(prediction_result["plddt"][:seq_len])
         ptmscore.append(prediction_result["ptm"])
         paes_res = []
 
         for i in range(seq_len):
             paes_res.append(prediction_result["predicted_aligned_error"][i][:seq_len])
         paes.append(paes_res)
-        representations.append(prediction_result['representations'])
+
         if do_relax:
             from alphafold.relax import relax
             from alphafold.common import residue_constants
@@ -242,6 +249,8 @@ def predict_structure(
         # early stop criteria fulfilled
         if np.mean(prediction_result["plddt"][:seq_len]) > stop_at_score:
             break
+    if only_representations:
+        return {"representations": representations}
     # rerank models based on predicted lddt
     if rank_by == "ptmscore":
         model_rank = np.array(ptmscore).argsort()[::-1]
@@ -507,6 +516,7 @@ def run(
     stop_at_score: float = 100,
     recompile_padding: float = 1.1,
     recompile_all_models: bool = False,
+        only_extract_representations: bool = True
 ):
     data_dir = Path(data_dir)
     result_dir = Path(result_dir)
@@ -697,11 +707,34 @@ def run(
                 do_relax=use_amber,
                 rank_by=rank_mode,
                 stop_at_score=stop_at_score,
+                only_representations=only_extract_representations
             )
         except RuntimeError as e:
             # This normally happens on OOM. TODO: Filter for the specific OOM error message
             logger.error(f"Could not predict {jobname}. Not Enough GPU memory? {e}")
             continue
+        if only_extract_representations:
+            with open(os.path.join(result_dir, f'{jobname}_representations.pkl'), 'wb') as f:
+                pickle.dump(outs['representations'], f)
+
+            for repr_i, representation in enumerate(outs['representations']):
+                pair_repr = representation['pair']
+
+                feat_0, feat_1, feat_2_bottom, feat_2_top = np.percentile(pair_repr, [10, 90, 1, 99], axis=2)
+                thresholds = np.percentile(pair_repr, [8, 92])
+                feat_0_max = feat_0.max()
+                feat_0 = 1 - np.clip(feat_0, a_min=thresholds[0], a_max=None) / feat_0_max
+
+                feat_1 = np.clip(feat_1, a_min=None, a_max=thresholds[1]) / thresholds[1]
+
+                feat_2 = feat_2_top - feat_2_bottom
+                feat_2_max = np.percentile(feat_2, 95)
+                feat_2 = np.clip(feat_2, a_min=None, a_max=feat_2_max) / feat_2_max
+
+                features = np.stack([feat_0, feat_1, feat_2], axis=2) * 255
+                cv2.imwrite(os.path.join(result_dir, f'{jobname}_pair_{repr_i}.png'), features)
+
+            break
         plot_lddt(jobname, np_example["msa"], outs, np_example["msa"][0], result_dir)
         pae_dict = dict()
         plddt_dict = dict()
