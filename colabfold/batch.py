@@ -1,14 +1,15 @@
 import json
-import pickle
-import os
 import logging
 import math
+import os
+import pickle
 import random
 import sys
 import time
 from argparse import ArgumentParser
 from pathlib import Path
 from typing import Any, Dict, Tuple, List, Union, Mapping, Optional
+
 import cv2
 import haiku
 import numpy as np
@@ -84,7 +85,7 @@ def mk_mock_template(query_sequence, num_temp: int = 1) -> Mapping[str, Any]:
 
 
 def mk_template(
-    a3m_lines: str, template_path: str, query_sequence: str
+        a3m_lines: str, template_path: str, query_sequence: str
 ) -> Mapping[str, Any]:
     template_featurizer = templates.HhsearchHitFeaturizer(
         mmcif_dir=template_path,
@@ -108,10 +109,10 @@ def mk_template(
 
 
 def batch_input(
-    input: model.features.FeatureDict,
-    model_runner: model.RunModel,
-    model_name: str,
-    crop_len: int,
+        input: model.features.FeatureDict,
+        model_runner: model.RunModel,
+        model_name: str,
+        crop_len: int,
 ) -> model.features.FeatureDict:
     model_config = model_runner.config
     eval_cfg = model_config.data.eval
@@ -138,17 +139,17 @@ def batch_input(
 
 
 def predict_structure(
-    prefix: str,
-    result_dir: Path,
-    feature_dict: Dict[str, Any],
-    is_complex: bool,
-    sequences_lengths: List[int],
-    crop_len: int,
-    model_runner_and_params: List[Tuple[str, model.RunModel, haiku.Params]],
-    do_relax: bool = False,
-    rank_by: str = "auto",
-    random_seed: int = 0,
-    stop_at_score: float = 100,
+        prefix: str,
+        result_dir: Path,
+        feature_dict: Dict[str, Any],
+        is_complex: bool,
+        sequences_lengths: List[int],
+        crop_len: int,
+        model_runner_and_params: List[Tuple[str, model.RunModel, haiku.Params]],
+        do_relax: bool = False,
+        rank_by: str = "auto",
+        random_seed: int = 0,
+        stop_at_score: float = 100,
         only_representations: bool = True
 ):
     """Predicts structure using AlphaFold for the given sequence."""
@@ -196,7 +197,6 @@ def predict_structure(
 
         mean_plddt = np.mean(prediction_result["plddt"][:seq_len])
         plddts.append(prediction_result["plddt"][:seq_len])
-
 
         logger.info(
             f"{model_name} took {prediction_time:.1f}s with pLDDT {mean_plddt :.1f}"
@@ -280,7 +280,7 @@ def predict_structure(
 
 
 def get_queries(
-    input_path: Union[str, Path], sort_queries_by: str = "length"
+        input_path: Union[str, Path], sort_queries_by: str = "length"
 ) -> Tuple[List[Tuple[str, str, Optional[List[str]]]], bool]:
     """Reads a directory of fasta files, a single fasta file or a csv file and returns a tuple
     of job name, sequence and the optional a3m lines"""
@@ -353,7 +353,7 @@ def get_queries(
 
 
 def pair_sequences(
-    a3m_lines: List[str], query_sequences: List[str], query_cardinality: List[int]
+        a3m_lines: List[str], query_sequences: List[str], query_cardinality: List[int]
 ) -> str:
     a3m_line_paired = [""] * len(a3m_lines[0].splitlines())
     for n, seq in enumerate(query_sequences):
@@ -369,7 +369,7 @@ def pair_sequences(
 
 
 def pad_sequences(
-    a3m_lines: List[str], query_sequences: List[str], query_cardinality: List[int]
+        a3m_lines: List[str], query_sequences: List[str], query_cardinality: List[int]
 ) -> str:
     _blank_seq = [
         ("-" * len(seq)) * query_cardinality[n] for n, seq in enumerate(query_sequences)
@@ -387,22 +387,22 @@ def pad_sequences(
                     "".join(
                         _blank_seq[:n]
                         + [a3m_line] * query_cardinality[n]
-                        + _blank_seq[n + 1 :]
+                        + _blank_seq[n + 1:]
                     )
                 )
     return "\n".join(a3m_lines_combined)
 
 
 def get_msa_and_templates(
-    a3m_lines: Optional[str],
-    jobname: str,
-    query_sequences: Union[str, List[str]],
-    result_dir: Path,
-    use_env: bool,
-    use_templates: bool,
-    pair_mode: str,
-    host_url: str = DEFAULT_API_SERVER,
-    max_msa_depth: int = None
+        a3m_lines: Optional[str],
+        jobname: str,
+        query_sequences: Union[str, List[str]],
+        result_dir: Path,
+        use_env: bool,
+        use_templates: bool,
+        pair_mode: str,
+        host_url: str = DEFAULT_API_SERVER,
+        max_msa_depth: int = None
 ) -> Tuple[
     Optional[List[str]], Optional[List[str]], List[str], List[int], Mapping[str, Any]
 ]:
@@ -452,9 +452,9 @@ def get_msa_and_templates(
 
     if not a3m_lines:
         if (
-            pair_mode == "none"
-            or pair_mode == "unpaired"
-            or pair_mode == "unpaired+paired"
+                pair_mode == "none"
+                or pair_mode == "unpaired"
+                or pair_mode == "unpaired+paired"
         ):
             # find normal a3ms
             a3m_lines = run_mmseqs2(
@@ -499,24 +499,25 @@ def get_msa_and_templates(
 
 
 def run(
-    queries: List[Tuple[str, Union[str, List[str]], Optional[str]]],
-    result_dir: Union[str, Path],
-    use_templates: bool,
-    use_amber: bool,
-    msa_mode: str,
-    num_models: int,
-    num_recycles: int,
-    model_order: List[int],
-    is_complex: bool,
-    keep_existing_results: bool,
-    rank_mode: str,
-    pair_mode: str,
-    data_dir: Union[str, Path] = default_data_dir,
-    host_url: str = DEFAULT_API_SERVER,
-    stop_at_score: float = 100,
-    recompile_padding: float = 1.1,
-    recompile_all_models: bool = False,
-        only_extract_representations: bool = True
+        queries: List[Tuple[str, Union[str, List[str]], Optional[str]]],
+        result_dir: Union[str, Path],
+        use_templates: bool,
+        use_amber: bool,
+        msa_mode: str,
+        num_models: int,
+        num_recycles: int,
+        model_order: List[int],
+        is_complex: bool,
+        keep_existing_results: bool,
+        rank_mode: str,
+        pair_mode: str,
+        data_dir: Union[str, Path] = default_data_dir,
+        host_url: str = DEFAULT_API_SERVER,
+        stop_at_score: float = 100,
+        recompile_padding: float = 1.1,
+        recompile_all_models: bool = False,
+        only_extract_representations: bool = True,
+        max_msa_depth: int = 1200
 ):
     data_dir = Path(data_dir)
     result_dir = Path(result_dir)
@@ -563,8 +564,8 @@ def run(
         jobname = safe_filename(raw_jobname)
         # In the colab version we know we're done when a zip file has been written
         if (
-            keep_existing_results
-            and result_dir.joinpath(jobname).with_suffix(".result.zip").is_file()
+                keep_existing_results
+                and result_dir.joinpath(jobname).with_suffix(".result.zip").is_file()
         ):
             logger.info(f"Skipping {jobname} (result.zip)")
             continue
@@ -607,6 +608,7 @@ def run(
                 use_templates,
                 pair_mode,
                 host_url,
+                max_msa_depth=max_msa_depth
             )
         except Exception as e:
             logger.exception(f"Could not get MSA/templates for {jobname}: {e}")
@@ -742,7 +744,7 @@ def run(
         for model_name, model_dict in outs.items():
             pae_dict[model_name] = model_dict['pae']
             plddt_dict[model_name] = model_dict['plddt']
-            representation_dict[model_name] = model_dict['representations']  
+            representation_dict[model_name] = model_dict['representations']
         with open(os.path.join(result_dir, f'{jobname}_predicted_alignment_error.pkl'), 'wb') as f:
             pickle.dump(pae_dict, f)
         with open(os.path.join(result_dir, f'{jobname}_representations.pkl'), 'wb') as f:
@@ -759,7 +761,7 @@ def main():
         "input",
         default="input",
         help="Can be one of the following: "
-        "Directory with fasta/a3m files, a csv/tsv file, a fasta file or an a3m file",
+             "Directory with fasta/a3m files, a csv/tsv file, a fasta file or an a3m file",
     )
     parser.add_argument("results", help="Directory to write the results to")
 
@@ -767,7 +769,7 @@ def main():
     parser.add_argument(
         "--stop-at-score",
         help="Compute models until plddt or ptmscore > threshold is reached. "
-        "This can make colabfold much faster by only running the first model for easy queries.",
+             "This can make colabfold much faster by only running the first model for easy queries.",
         type=float,
         default=100,
     )
@@ -775,7 +777,7 @@ def main():
     parser.add_argument(
         "--num-recycle",
         help="Number of prediction cycles."
-        "Increasing recycles can improve the quality but slows down the prediction.",
+             "Increasing recycles can improve the quality but slows down the prediction.",
         type=int,
         default=3,
     )
@@ -786,10 +788,10 @@ def main():
         type=float,
         default=1.1,
         help="Whenever the input length changes, the model needs to be recompiled, which is slow. "
-        "We pad sequences by this factor, so we can e.g. compute sequence from length 100 to 110 without recompiling. "
-        "The prediction will become marginally slower for the longer input, "
-        "but overall performance increases due to not recompiling. "
-        "Set to 1 to disable.",
+             "We pad sequences by this factor, so we can e.g. compute sequence from length 100 to 110 without recompiling. "
+             "The prediction will become marginally slower for the longer input, "
+             "but overall performance increases due to not recompiling. "
+             "Set to 1 to disable.",
     )
 
     parser.add_argument("--model-order", default="3,4,5,1,2", type=str)
