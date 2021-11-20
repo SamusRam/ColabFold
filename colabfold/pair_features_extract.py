@@ -35,7 +35,7 @@ args = parser.parse_args()
 msa_mode = args.msa_mode
 num_models = args.num_models
 num_recycles = args.num_recycles
-use_msa = True if msa_mode.startswith("MMseqs2") else False
+use_msa = True if "MMseqs2" in msa_mode else False
 use_env = True if msa_mode == "MMseqs2 (UniRef+Environmental)" else False
 use_amber = False
 use_templates = args.use_templates
