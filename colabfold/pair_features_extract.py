@@ -23,7 +23,7 @@ parser.add_argument('--msa-mode', default='"MMseqs2 (UniRef+Environmental)"',
                     type=str,
                     help='"MMseqs2 (UniRef+Environmental)", "MMseqs2 (UniRef only)","single_sequence","custom"')
 parser.add_argument('--num-recycles', type=int, default=1)
-parser.add_argument('-max-msa-depth', type=int, default=250)
+parser.add_argument('--max-msa-depth', type=int, default=250)
 parser.add_argument('--use-templates', type=bool, default=True)
 parser.add_argument('--query-sequence', type=str)
 parser.add_argument('--result-dir', type=str, default='.')
