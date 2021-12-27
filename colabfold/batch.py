@@ -273,8 +273,8 @@ def predict_structure(
         out[f"model_{n + 1}"] = {
             "plddt": plddts[r],
             "pae": paes[r],
-            "pTMscore": ptmscore,
-            "representations": representations
+            "pTMscore": ptmscore[r],
+            "representations": representations[r]
         }
     return out
 
