@@ -150,7 +150,7 @@ def predict_structure(
         rank_by: str = "auto",
         random_seed: int = 0,
         stop_at_score: float = 100,
-        only_representations: bool = True
+        extract_representations_fast_and_dirty: bool = True
 ):
     """Predicts structure using AlphaFold for the given sequence."""
     # Run the models.
@@ -192,7 +192,7 @@ def predict_structure(
         prediction_time = time.time() - start
         prediction_times.append(prediction_time)
         representations.append(prediction_result['representations'])
-        if only_representations:
+        if extract_representations_fast_and_dirty:
             continue
 
         mean_plddt = np.mean(prediction_result["plddt"][:seq_len])
@@ -249,7 +249,7 @@ def predict_structure(
         # early stop criteria fulfilled
         if np.mean(prediction_result["plddt"][:seq_len]) > stop_at_score:
             break
-    if only_representations:
+    if extract_representations_fast_and_dirty:
         return {"representations": representations}
     # rerank models based on predicted lddt
     if rank_by == "ptmscore":
@@ -516,7 +516,7 @@ def run(
         stop_at_score: float = 100,
         recompile_padding: float = 1.1,
         recompile_all_models: bool = False,
-        only_extract_representations: bool = True,
+        extract_representations_fast_and_dirty: bool = False,
         max_msa_depth: int = 1200
 ):
     data_dir = Path(data_dir)
@@ -709,13 +709,13 @@ def run(
                 do_relax=use_amber,
                 rank_by=rank_mode,
                 stop_at_score=stop_at_score,
-                only_representations=only_extract_representations
+                extract_representations_fast_and_dirty=extract_representations_fast_and_dirty
             )
         except RuntimeError as e:
             # This normally happens on OOM. TODO: Filter for the specific OOM error message
             logger.error(f"Could not predict {jobname}. Not Enough GPU memory? {e}")
             continue
-        if only_extract_representations:
+        if extract_representations_fast_and_dirty:
             with open(os.path.join(result_dir, f'{jobname}_representations.pkl'), 'wb') as f:
                 pickle.dump(outs['representations'], f)
 

@@ -22,8 +22,8 @@ parser.add_argument('--num-models', type=int, default=1)
 parser.add_argument('--msa-mode', default='"MMseqs2 (UniRef+Environmental)"',
                     type=str,
                     help='"MMseqs2 (UniRef+Environmental)", "MMseqs2 (UniRef only)","single_sequence","custom"')
-parser.add_argument('--num-recycles', type=int, default=1)
-parser.add_argument('--max-msa-depth', type=int, default=250)
+parser.add_argument('--num-recycles', type=int, default=3)
+parser.add_argument('--max-msa-depth', type=int, default=10000)
 parser.add_argument('--use-templates', type=bool, default=True)
 parser.add_argument('--query-sequence', type=str)
 parser.add_argument('--result-dir', type=str, default='.')
@@ -37,7 +37,7 @@ num_models = args.num_models
 num_recycles = args.num_recycles
 use_msa = True if "MMseqs2" in msa_mode else False
 use_env = True if msa_mode == "MMseqs2 (UniRef+Environmental)" else False
-use_amber = False
+use_amber = True
 use_templates = args.use_templates
 
 query_sequence = args.query_sequence
@@ -85,5 +85,6 @@ run(
   rank_mode="auto",
   pair_mode="unpaired+paired",
   stop_at_score=float(100),
-  max_msa_depth=args.max_msa_depth
+  max_msa_depth=args.max_msa_depth,
+
 )

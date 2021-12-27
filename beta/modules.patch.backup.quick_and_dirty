@@ -1,0 +1,56 @@
+--- modules_orig.py	2021-11-18 09:59:25.411784193 +0100
++++ modules.py	2021-11-20 14:32:45.240410673 +0100
+@@ -139,10 +139,11 @@
+   def __call__(self,
+                ensembled_batch,
+                non_ensembled_batch,
+-               is_training,
++               is_training=False,
+                compute_loss=False,
+                ensemble_representations=False,
+-               return_representations=False):
++               return_representations=False,
++               only_return_representations=False):
+ 
+     num_ensemble = jnp.asarray(ensembled_batch['seq_length'].shape[0])
+ 
+@@ -195,6 +196,8 @@
+           representations[k] /= num_ensemble.astype(representations[k].dtype)
+ 
+     representations['msa'] = msa_representation
++    if only_return_representations:
++        return {'representations': representations}
+     batch = batch0  # We are not ensembled from here on.
+ 
+     heads = {}
+@@ -284,7 +287,8 @@
+       is_training,
+       compute_loss=False,
+       ensemble_representations=False,
+-      return_representations=False):
++      return_representations=False,
++      only_return_representations=True):
+     """Run the AlphaFold model.
+ 
+     Arguments:
+@@ -339,9 +343,9 @@
+           non_ensembled_batch=non_ensembled_batch,
+           is_training=is_training,
+           compute_loss=compute_loss,
+-          ensemble_representations=ensemble_representations)
++          ensemble_representations=ensemble_representations, only_return_representations=only_return_representations)
+ 
+-    if self.config.num_recycle:
++    if self.config.num_recycle and not only_return_representations:
+       emb_config = self.config.embeddings_and_evoformer
+       prev = {
+           'prev_pos': jnp.zeros(
+@@ -390,6 +394,8 @@
+       (recycles,tol) = 0, jnp.inf
+ 
+     ret = do_call(prev=prev, recycle_idx=num_iter)
++    if only_return_representations:
++        return ret, (None, None)
+     if compute_loss:
+       ret = ret[0], [ret[1]]
+ 
