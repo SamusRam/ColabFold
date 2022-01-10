@@ -758,54 +758,24 @@ def run(
 def store_msa(
         queries: List[Tuple[str, Union[str, List[str]], Optional[str]]],
         result_dir: Union[str, Path],
-        msa_results_path: str,
         use_templates: bool,
         use_amber: bool,
         msa_mode: str,
         num_models: int,
-        num_recycles: int,
-        model_order: List[int],
         is_complex: bool,
         keep_existing_results: bool,
-        rank_mode: str,
         pair_mode: str,
-        data_dir: Union[str, Path] = default_data_dir,
         host_url: str = DEFAULT_API_SERVER,
-        stop_at_score: float = 100,
         recompile_padding: float = 1.1,
-        recompile_all_models: bool = False,
         max_msa_depth: int = 1200
 ):
     result_dir = Path(result_dir)
     result_dir.mkdir(exist_ok=True)
 
-    # Record the parameters of this run
-    result_dir.joinpath("config.json").write_text(
-        json.dumps(
-            {
-                "num_queries": len(queries),
-                "use_templates": use_templates,
-                "use_amber": use_amber,
-                "msa_mode": msa_mode,
-                "num_models": num_models,
-                "num_recycles": num_recycles,
-                "model_order": model_order,
-                "keep_existing_results": keep_existing_results,
-                "rank_mode": rank_mode,
-                "pair_mode": pair_mode,
-                "host_url": host_url,
-                "stop_at_score": stop_at_score,
-                "recompile_padding": recompile_padding,
-                "recompile_all_models": recompile_all_models,
-            }
-        )
-    )
-
     use_env = msa_mode == "MMseqs2 (UniRef+Environmental)"
 
     # TODO: What's going on with MSA mode?
     write_bibtex(True, use_env, use_templates, use_amber, result_dir)
-
 
     crop_len = 0
     for job_number, (raw_jobname, query_sequence, a3m_lines) in enumerate(queries):
