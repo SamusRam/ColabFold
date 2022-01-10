@@ -755,6 +755,210 @@ def run(
     logger.info("Done")
 
 
+def store_msa(
+        queries: List[Tuple[str, Union[str, List[str]], Optional[str]]],
+        result_dir: Union[str, Path],
+        msa_results_path: str,
+        use_templates: bool,
+        use_amber: bool,
+        msa_mode: str,
+        num_models: int,
+        num_recycles: int,
+        model_order: List[int],
+        is_complex: bool,
+        keep_existing_results: bool,
+        rank_mode: str,
+        pair_mode: str,
+        data_dir: Union[str, Path] = default_data_dir,
+        host_url: str = DEFAULT_API_SERVER,
+        stop_at_score: float = 100,
+        recompile_padding: float = 1.1,
+        recompile_all_models: bool = False,
+        extract_representations_fast_and_dirty: bool = False,
+        max_msa_depth: int = 1200
+):
+    data_dir = Path(data_dir)
+    result_dir = Path(result_dir)
+    result_dir.mkdir(exist_ok=True)
+
+    # Record the parameters of this run
+    result_dir.joinpath("config.json").write_text(
+        json.dumps(
+            {
+                "num_queries": len(queries),
+                "use_templates": use_templates,
+                "use_amber": use_amber,
+                "msa_mode": msa_mode,
+                "num_models": num_models,
+                "num_recycles": num_recycles,
+                "model_order": model_order,
+                "keep_existing_results": keep_existing_results,
+                "rank_mode": rank_mode,
+                "pair_mode": pair_mode,
+                "host_url": host_url,
+                "stop_at_score": stop_at_score,
+                "recompile_padding": recompile_padding,
+                "recompile_all_models": recompile_all_models,
+            }
+        )
+    )
+
+    use_env = msa_mode == "MMseqs2 (UniRef+Environmental)"
+
+    # TODO: What's going on with MSA mode?
+    write_bibtex(True, use_env, use_templates, use_amber, result_dir)
+
+    model_runner_and_params = load_models_and_params(
+        num_models,
+        num_recycles,
+        model_order,
+        "_multimer" if is_complex else "_ptm",
+        data_dir,
+        recompile_all_models,
+    )
+
+    crop_len = 0
+    for job_number, (raw_jobname, query_sequence, a3m_lines) in enumerate(queries):
+        jobname = safe_filename(raw_jobname)
+        # In the colab version we know we're done when a zip file has been written
+        if (
+                keep_existing_results
+                and result_dir.joinpath(jobname).with_suffix(".result.zip").is_file()
+        ):
+            logger.info(f"Skipping {jobname} (result.zip)")
+            continue
+        # In the local version we don't zip the files, so assume we're done if the last unrelaxed pdb file exists
+        last_pdb_file = f"{jobname}_unrelaxed_model_{num_models}.pdb"
+        if keep_existing_results and result_dir.joinpath(last_pdb_file).is_file():
+            logger.info(f"Skipping {jobname} (pdb)")
+            continue
+        query_sequence_len_array = (
+            [len(query_sequence)]
+            if isinstance(query_sequence, str)
+            else [len(q) for q in query_sequence]
+        )
+
+        logger.info(
+            f"Query {job_number + 1}/{len(queries)}: {jobname} (length {sum(query_sequence_len_array)})"
+        )
+
+        query_sequence_len = (
+            len(query_sequence)
+            if isinstance(query_sequence, str)
+            else sum(len(s) for s in query_sequence)
+        )
+
+        if query_sequence_len > crop_len:
+            crop_len = math.ceil(query_sequence_len * recompile_padding)
+        try:
+            (
+                unpaired_msa,
+                paired_msa,
+                query_seqs_unique,
+                query_seqs_cardinality,
+                template_features,
+            ) = get_msa_and_templates(
+                a3m_lines,
+                jobname,
+                query_sequence,
+                result_dir,
+                use_env,
+                use_templates,
+                pair_mode,
+                host_url,
+                max_msa_depth=max_msa_depth
+            )
+        except Exception as e:
+            logger.exception(f"Could not get MSA/templates for {jobname}: {e}")
+            continue
+
+        features_for_chain = {}
+        chain_cnt = 0
+        for sequence_index, sequence in enumerate(query_seqs_unique):
+            for cardinality in range(0, query_seqs_cardinality[sequence_index]):
+                try:
+                    msa = pipeline.parsers.parse_a3m(unpaired_msa[sequence_index])
+                    # gather features
+                    feature_dict = {
+                        **pipeline.make_sequence_features(
+                            sequence=sequence, description="none", num_res=len(sequence)
+                        ),
+                        **pipeline.make_msa_features([msa]),
+                        **template_features[sequence_index],
+                    }
+                    if is_complex:
+                        parsed_paired_msa = pipeline.parsers.parse_a3m(
+                            paired_msa[sequence_index]
+                        )
+                        all_seq_features = {
+                            f"{k}_all_seq": v
+                            for k, v in pipeline.make_msa_features(
+                                [parsed_paired_msa]
+                            ).items()
+                        }
+                        feature_dict.update(all_seq_features)
+                    features_for_chain[protein.PDB_CHAIN_IDS[chain_cnt]] = feature_dict
+                    chain_cnt += 1
+                except Exception as e:
+                    logger.exception(f"Could not predict {jobname}: {e}")
+                    continue
+
+        # Do further feature post-processing depending on the model type.
+        if not is_complex:
+            np_example = features_for_chain[protein.PDB_CHAIN_IDS[0]]
+        else:
+            all_chain_features = {}
+            for chain_id, chain_features in features_for_chain.items():
+                all_chain_features[
+                    chain_id
+                ] = pipeline_multimer.convert_monomer_features(chain_features, chain_id)
+
+            all_chain_features = pipeline_multimer.add_assembly_features(
+                all_chain_features
+            )
+            # np_example = feature_processing.pair_and_merge(
+            #    all_chain_features=all_chain_features, is_prokaryote=is_prokaryote)
+            feature_processing.process_unmerged_features(all_chain_features)
+            np_chains_list = list(all_chain_features.values())
+            pair_msa_sequences = not feature_processing._is_homomer_or_monomer(
+                np_chains_list
+            )
+            chains = list(np_chains_list)
+            chain_keys = chains[0].keys()
+            updated_chains = []
+            for chain_num, chain in enumerate(chains):
+                new_chain = {k: v for k, v in chain.items() if "_all_seq" not in k}
+                for feature_name in chain_keys:
+                    if feature_name.endswith("_all_seq"):
+                        feats_padded = msa_pairing.pad_features(
+                            chain[feature_name], feature_name
+                        )
+                        new_chain[feature_name] = feats_padded
+                new_chain["num_alignments_all_seq"] = np.asarray(
+                    len(np_chains_list[chain_num]["msa_all_seq"])
+                )
+                updated_chains.append(new_chain)
+            np_chains_list = updated_chains
+            np_chains_list = feature_processing.crop_chains(
+                np_chains_list,
+                msa_crop_size=feature_processing.MSA_CROP_SIZE,
+                pair_msa_sequences=pair_msa_sequences,
+                max_templates=feature_processing.MAX_TEMPLATES,
+            )
+            np_example = feature_processing.msa_pairing.merge_chain_features(
+                np_chains_list=np_chains_list,
+                pair_msa_sequences=pair_msa_sequences,
+                max_templates=feature_processing.MAX_TEMPLATES,
+            )
+            np_example = feature_processing.process_final(np_example)
+
+            # Pad MSA to avoid zero-sized extra_msa.
+            np_example = pipeline_multimer.pad_msa(np_example, min_num_seq=512)
+
+        with open(os.path.join(msa_results_path, result_dir), 'wb') as f:
+            pickle.dump(np_example, f)
+
+
 def main():
     parser = ArgumentParser()
     parser.add_argument(

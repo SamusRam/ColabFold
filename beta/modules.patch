@@ -9,27 +9,17 @@
                 compute_loss=False,
                 ensemble_representations=False,
 -               return_representations=False):
-+               return_representations=False,
-+               only_return_representations=False):
++               return_representations=True):
  
      num_ensemble = jnp.asarray(ensembled_batch['seq_length'].shape[0])
  
-@@ -195,6 +196,8 @@
-           representations[k] /= num_ensemble.astype(representations[k].dtype)
- 
-     representations['msa'] = msa_representation
-+    if only_return_representations:
-+        return {'representations': representations}
-     batch = batch0  # We are not ensembled from here on.
- 
-     heads = {}
+
 @@ -284,7 +287,8 @@
        is_training,
        compute_loss=False,
        ensemble_representations=False,
 -      return_representations=False):
-+      return_representations=False,
-+      only_return_representations=True):
++      return_representations=True):
      """Run the AlphaFold model.
  
      Arguments:
