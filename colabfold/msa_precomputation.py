@@ -1,5 +1,4 @@
 import re
-from colabfold.download import download_alphafold_params
 from colabfold.utils import setup_logging
 from colabfold.batch import get_queries, store_msa
 import argparse
@@ -75,15 +74,9 @@ store_msa(
   use_amber=use_amber,
   msa_mode=msa_mode,
   num_models=num_models,
-  num_recycles=num_recycles,
-  model_order=[1, 2, 3, 4, 5],
   is_complex=is_complex,
-  data_dir=Path("."),
   keep_existing_results=False,
   recompile_padding=1.0,
-  rank_mode="auto",
   pair_mode="unpaired+paired",
-  stop_at_score=float(100),
   max_msa_depth=args.max_msa_depth,
-
 )
