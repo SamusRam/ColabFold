@@ -774,10 +774,8 @@ def store_msa(
         stop_at_score: float = 100,
         recompile_padding: float = 1.1,
         recompile_all_models: bool = False,
-        extract_representations_fast_and_dirty: bool = False,
         max_msa_depth: int = 1200
 ):
-    data_dir = Path(data_dir)
     result_dir = Path(result_dir)
     result_dir.mkdir(exist_ok=True)
 
@@ -808,14 +806,6 @@ def store_msa(
     # TODO: What's going on with MSA mode?
     write_bibtex(True, use_env, use_templates, use_amber, result_dir)
 
-    model_runner_and_params = load_models_and_params(
-        num_models,
-        num_recycles,
-        model_order,
-        "_multimer" if is_complex else "_ptm",
-        data_dir,
-        recompile_all_models,
-    )
 
     crop_len = 0
     for job_number, (raw_jobname, query_sequence, a3m_lines) in enumerate(queries):
@@ -955,7 +945,7 @@ def store_msa(
             # Pad MSA to avoid zero-sized extra_msa.
             np_example = pipeline_multimer.pad_msa(np_example, min_num_seq=512)
 
-        with open(os.path.join(msa_results_path, result_dir), 'wb') as f:
+        with open(os.path.join(result_dir, f'msa_{jobname}.pkl'), 'wb') as f:
             pickle.dump(np_example, f)
 
 
