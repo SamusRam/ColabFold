@@ -18,7 +18,7 @@ end_i = int(len(df)*args.end_perc/100)
 
 
 for _, row in df.iloc[start_i: end_i].iterrows():
-    query_sequence = row['Amino acid sequence']
+    query_sequence = row['Amino acid sequence'].replace('\w', '').replace('\n', '')
     jobname = row['Uniprot ID']
     subprocess.call(['python', '-m', 'colabfold.msa_precomputation', '--max-msa-depth', '100000',
                      '--query-sequence', query_sequence, '--jobname', jobname])
