@@ -6,8 +6,8 @@ os.environ['CUDA_DEVICE_ORDER']='PCI_BUS_ID'
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--gpu-id', type=int, default=0)
-parser.add_argument('--num-models', type=int, default=1)
+parser.add_argument('--gpu-id', type=str, default='0')
+parser.add_argument('--num-models', type=int, default=5)
 parser.add_argument('--msa-mode', default='"MMseqs2 (UniRef+Environmental)"',
                     type=str,
                     help='"MMseqs2 (UniRef+Environmental)", "MMseqs2 (UniRef only)","single_sequence","custom"')
