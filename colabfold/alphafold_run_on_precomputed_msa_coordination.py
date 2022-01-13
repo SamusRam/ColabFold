@@ -41,8 +41,8 @@ for _, row in df.iloc[start_i: end_i].iterrows():
     query_sequence = row['Amino acid sequence'].replace('\w', '').replace('\n', '')
     jobname = row['Uniprot ID']
     free_gpu_id = get_free_gpu_id()
-    subprocess.call(['python', '-m', 'colabfold.alphafold_run_on_precomputed_msa',
-                     '--gpu-id', free_gpu_id,
+    subprocess.Popen(['python', '-m', 'colabfold.alphafold_run_on_precomputed_msa',
+                     '--gpu-id', str(free_gpu_id),
                      '--query-sequence', query_sequence,
                      '--jobname', jobname])
 
@@ -63,6 +63,6 @@ for _, row in df.iloc[start_i: end_i].iterrows():
 # git clone https://github.com/SamusRam/ColabFold
 # git checkout high_quality_representations
 # pip install openpyxl
-# python -m colabfold.msa_precomputation_coordination --data-root ../data --start-perc 20 --end-perc 40
+# python -m colabfold.alphafold_run_on_precomputed_msa_coordination --data-root ../data --start-perc 0 --end-perc 5
 
 # pip install GPUtil
