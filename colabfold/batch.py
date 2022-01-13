@@ -958,6 +958,9 @@ def run_on_precomputed_msa(
     # TODO: What's going on with MSA mode?
     write_bibtex(True, use_env, use_templates, use_amber, result_dir)
 
+    if not os.path.exists(data_dir.joinpath("params").joinpath('params_model_1_ptm.npz')):
+        download_alphafold_params(is_complex, data_dir)
+
     model_runner_and_params = load_models_and_params(
         num_models,
         num_recycles,
