@@ -53,7 +53,9 @@ for _, row in df.iloc[start_i: end_i].iterrows():
 # pip install "colabfold[alphafold] @ git+https://github.com/SamusRam/ColabFold@high_quality_representations"
 # pip install --upgrade "jax[cuda]" -f https://storage.googleapis.com/jax-releases/jax_releases.html  # Note: wheels only available on linux.
 # wget -nc https://raw.githubusercontent.com/SamusRam/ColabFold/high_quality_representations/beta/modules.patch
-
+# python_executable_path=$(which python)
+# alphafold_modules_path=${python_executable_path/bin\/python/"lib/python3.8/site-packages/alphafold/model/modules.py"}
+# patch -u $alphafold_modules_path -i modules.patch
 
 # # pip install --upgrade --force-reinstall "colabfold[alphafold] @ git+https://github.com/SamusRam/ColabFold@high_quality_representations"
 # conda install -y -c conda-forge -c bioconda kalign3=3.2.2 hhsuite=3.3.0
