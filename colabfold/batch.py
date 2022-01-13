@@ -907,6 +907,113 @@ def store_msa(
         logger.info(f'Stored msa for {jobname}')
 
 
+def run_on_precomputed_msa(
+        queries: List[Tuple[str, Union[str, List[str]], Optional[str]]],
+        result_dir: Union[str, Path],
+        use_templates: bool,
+        use_amber: bool,
+        msa_mode: str,
+        num_models: int,
+        num_recycles: int,
+        model_order: List[int],
+        is_complex: bool,
+        keep_existing_results: bool,
+        rank_mode: str,
+        pair_mode: str,
+        data_dir: Union[str, Path] = default_data_dir,
+        host_url: str = DEFAULT_API_SERVER,
+        stop_at_score: float = 100,
+        recompile_padding: float = 1.1,
+        recompile_all_models: bool = False,
+        extract_representations_fast_and_dirty: bool = False,
+):
+    data_dir = Path(data_dir)
+    result_dir = Path(result_dir)
+    result_dir.mkdir(exist_ok=True)
+
+    # Record the parameters of this run
+    result_dir.joinpath("config.json").write_text(
+        json.dumps(
+            {
+                "num_queries": len(queries),
+                "use_templates": use_templates,
+                "use_amber": use_amber,
+                "msa_mode": msa_mode,
+                "num_models": num_models,
+                "num_recycles": num_recycles,
+                "model_order": model_order,
+                "keep_existing_results": keep_existing_results,
+                "rank_mode": rank_mode,
+                "pair_mode": pair_mode,
+                "host_url": host_url,
+                "stop_at_score": stop_at_score,
+                "recompile_padding": recompile_padding,
+                "recompile_all_models": recompile_all_models,
+            }
+        )
+    )
+
+    use_env = msa_mode == "MMseqs2 (UniRef+Environmental)"
+
+    # TODO: What's going on with MSA mode?
+    write_bibtex(True, use_env, use_templates, use_amber, result_dir)
+
+    model_runner_and_params = load_models_and_params(
+        num_models,
+        num_recycles,
+        model_order,
+        "_multimer" if is_complex else "_ptm",
+        data_dir,
+        recompile_all_models,
+    )
+
+    crop_len = 0
+    for job_number, (raw_jobname, query_sequence, a3m_lines) in enumerate(queries):
+        jobname = safe_filename(raw_jobname)
+        query_sequence_len_array = (
+            [len(query_sequence)]
+            if isinstance(query_sequence, str)
+            else [len(q) for q in query_sequence]
+        )
+
+        with open(os.path.join(result_dir, f'msa_{jobname}.pkl'), 'rb') as f:
+            np_example = pickle.load(f)
+
+        try:
+            outs = predict_structure(
+                jobname,
+                result_dir,
+                np_example,
+                is_complex,
+                sequences_lengths=query_sequence_len_array,
+                crop_len=crop_len,
+                model_runner_and_params=model_runner_and_params,
+                do_relax=use_amber,
+                rank_by=rank_mode,
+                stop_at_score=stop_at_score,
+                extract_representations_fast_and_dirty=extract_representations_fast_and_dirty
+            )
+        except RuntimeError as e:
+            # This normally happens on OOM. TODO: Filter for the specific OOM error message
+            logger.error(f"Could not predict {jobname}. Not Enough GPU memory? {e}")
+            continue
+
+        pae_dict = dict()
+        plddt_dict = dict()
+        representation_dict = dict()
+        for model_name, model_dict in outs.items():
+            pae_dict[model_name] = model_dict['pae']
+            plddt_dict[model_name] = model_dict['plddt']
+            representation_dict[model_name] = model_dict['representations']
+        with open(os.path.join(result_dir, f'{jobname}_predicted_alignment_error.pkl'), 'wb') as f:
+            pickle.dump(pae_dict, f)
+        with open(os.path.join(result_dir, f'{jobname}_representations.pkl'), 'wb') as f:
+            pickle.dump(representation_dict, f)
+        with open(os.path.join(result_dir, f'{jobname}_plddt.pkl'), 'wb') as f:
+            pickle.dump(plddt_dict, f)
+    logger.info("Done")
+
+
 def main():
     parser = ArgumentParser()
     parser.add_argument(
