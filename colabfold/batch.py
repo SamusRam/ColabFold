@@ -979,7 +979,7 @@ def run_on_precomputed_msa(
             else [len(q) for q in query_sequence]
         )
 
-        with open(os.path.join(result_dir, f'msa_{jobname}.pkl'), 'rb') as f:
+        with open(os.path.join(data_dir, 'precomputed_msa', f'msa_{jobname}.pkl'), 'rb') as f:
             np_example = pickle.load(f)
 
         try:
@@ -1165,3 +1165,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+

@@ -61,6 +61,7 @@ for _, row in df.iloc[start_i: end_i].iterrows():
 # conda install -y -c conda-forge -c bioconda kalign3=3.2.2 hhsuite=3.3.0
 # conda install -y -c conda-forge openmm=7.5.1 pdbfixer
 # git clone https://github.com/SamusRam/ColabFold
+# cd ColabFold
 # git checkout high_quality_representations
 # pip install openpyxl
 # python -m colabfold.alphafold_run_on_precomputed_msa_coordination --data-root ../data --start-perc 0 --end-perc 5
