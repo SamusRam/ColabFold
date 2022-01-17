@@ -12,7 +12,7 @@ parser.add_argument('--data-root', type=str)
 args = parser.parse_args()
 
 # tps_df = pd.read_excel(os.path.join(args.data_root, 'TPS-database_2021_11_04.xlsx'), engine='openpyxl')
-tps_df = pd.read_excel(os.path.join(args.data_root, 'TPS-database_2021_11_04.csv'))
+tps_df = pd.read_csv(os.path.join(args.data_root, 'TPS-database_2021_11_04.csv'))
 rf_df = pd.read_csv(os.path.join(args.data_root, 'tps_detection_plants_new_proteins_df.csv'))
 df = pd.concat((tps_df[['Uniprot ID', 'Amino acid sequence']], rf_df[['Uniprot ID', 'Amino acid sequence']]))
 df.drop_duplicates(subset=['Uniprot ID'], inplace=True)
