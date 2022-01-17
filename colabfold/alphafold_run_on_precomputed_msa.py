@@ -1,8 +1,6 @@
 import re
 import os
 import argparse
-os.environ['CUDA_DEVICE_ORDER']='PCI_BUS_ID'
-
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--gpu-id', type=str, default='0')
@@ -15,6 +13,7 @@ parser.add_argument('--use-templates', type=bool, default=True)
 parser.add_argument('--query-sequence', type=str)
 parser.add_argument('--result-dir', type=str, default='.')
 parser.add_argument('--jobname', type=str)
+parser.add_argument('--data-root', type=str, default='.')
 
 
 args = parser.parse_args()
@@ -78,7 +77,7 @@ run_on_precomputed_msa(
     num_recycles=num_recycles,
     model_order=[1, 2, 3, 4, 5],
     is_complex=is_complex,
-    data_dir=Path("."),
+    data_dir=args.data_root,
     keep_existing_results=False,
     recompile_padding=1.0,
     rank_mode="auto",

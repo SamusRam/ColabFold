@@ -44,12 +44,13 @@ for _, row in df.iloc[start_i: end_i].iterrows():
     subprocess.Popen(['python', '-m', 'colabfold.alphafold_run_on_precomputed_msa',
                      '--gpu-id', str(free_gpu_id),
                      '--query-sequence', query_sequence,
-                     '--jobname', jobname])
+                     '--jobname', jobname,
+                      '--data-root', args.data_root])
 
 
-# conda create -n msa_extraction python=3.8 pandas numpy tensorflow-gpu
-# source activate msa_extraction
-# pip install "colabfold[alphafold] @ git+https://github.com/SamusRam/ColabFold@high_quality_representations"
+# conda create -n alphafold_extraction -c conda-forge -c bioconda kalign3=3.2.2 hhsuite=3.3.0 openmm=7.5.1 pdbfixer python=3.8 pandas numpy tensorflow-gpu
+# source activate alphafold_extraction
+# pip install --no-warn-conflicts -q "colabfold[alphafold] @ git+https://github.com/sokrypton/ColabFold"
 # pip install --upgrade "jax[cuda]" -f https://storage.googleapis.com/jax-releases/jax_releases.html  # Note: wheels only available on linux.
 # wget -nc https://raw.githubusercontent.com/SamusRam/ColabFold/high_quality_representations/beta/modules.patch
 # python_executable_path=$(which python)
