@@ -21,22 +21,25 @@ df['seq_len'] = df['Amino acid sequence'].map(len)
 df.sort_values(by='seq_len', inplace=True)
 start_i = int(len(df)*args.start_perc/100)
 end_i = int(len(df)*args.end_perc/100)
+all_available_gpus = []
 
 
 def get_free_gpu_id():
-    available_gpus = GPUtil.getAvailable(order='PCI_BUS_ID',
-                                         limit=100, # big M
-                                         maxLoad=0.5,
-                                         maxMemory=0.5,
-                                         includeNan=False, excludeID=[], excludeUUID=[])
-    while len(available_gpus) == 0:
-        time.sleep(2)
-        available_gpus = GPUtil.getAvailable(order='PCI_BUS_ID',
-                                         limit=100, # big M
-                                         maxLoad=0.5,
-                                         maxMemory=0.2,
-                                         includeNan=False, excludeID=[], excludeUUID=[])
-    return available_gpus[0]
+    global all_available_gpus
+    if len(all_available_gpus) == 0:
+        all_available_gpus = GPUtil.getAvailable(order='PCI_BUS_ID',
+                                             limit=100, # big M
+                                             maxLoad=0.5,
+                                             maxMemory=0.5,
+                                             includeNan=False, excludeID=[], excludeUUID=[])
+        while len(all_available_gpus) == 0:
+            time.sleep(60)
+            all_available_gpus = GPUtil.getAvailable(order='PCI_BUS_ID',
+                                             limit=100, # big M
+                                             maxLoad=0.1,
+                                             maxMemory=0.1,
+                                             includeNan=False, excludeID=[], excludeUUID=[])
+    return all_available_gpus.pop()
 
 
 for _, row in df.iloc[start_i: end_i].iterrows():
