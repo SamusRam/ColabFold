@@ -10,7 +10,6 @@ from argparse import ArgumentParser
 from pathlib import Path
 from typing import Any, Dict, Tuple, List, Union, Mapping, Optional
 
-import cv2
 import haiku
 import numpy as np
 import pandas
@@ -734,6 +733,7 @@ def run(
                 feat_2 = np.clip(feat_2, a_min=None, a_max=feat_2_max) / feat_2_max
 
                 features = np.stack([feat_0, feat_1, feat_2], axis=2) * 255
+                import cv2
                 cv2.imwrite(os.path.join(result_dir, f'{jobname}_pair_{repr_i}.png'), features)
 
             break

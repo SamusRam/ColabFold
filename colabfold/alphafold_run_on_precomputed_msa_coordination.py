@@ -47,9 +47,8 @@ for _, row in df.iloc[start_i: end_i].iterrows():
                      '--jobname', jobname])
 
 
-# conda create -n msa_extraction python=3.8 pandas numpy
-# conda activate msa_extraction
-# pip install opencv-python
+# conda create -n msa_extraction python=3.8 pandas numpy tensorflow-gpu
+# source activate msa_extraction
 # pip install "colabfold[alphafold] @ git+https://github.com/SamusRam/ColabFold@high_quality_representations"
 # pip install --upgrade "jax[cuda]" -f https://storage.googleapis.com/jax-releases/jax_releases.html  # Note: wheels only available on linux.
 # wget -nc https://raw.githubusercontent.com/SamusRam/ColabFold/high_quality_representations/beta/modules.patch
@@ -58,12 +57,16 @@ for _, row in df.iloc[start_i: end_i].iterrows():
 # patch -u $alphafold_modules_path -i modules.patch
 
 # # pip install --upgrade --force-reinstall "colabfold[alphafold] @ git+https://github.com/SamusRam/ColabFold@high_quality_representations"
-# conda install -y -c conda-forge -c bioconda kalign3=3.2.2 hhsuite=3.3.0
-# conda install -y -c conda-forge openmm=7.5.1 pdbfixer
+# # conda install -y -c conda-forge -c bioconda kalign3=3.2.2 hhsuite=3.3.0
+# # conda install -y -c conda-forge openmm=7.5.1 pdbfixer
 # git clone https://github.com/SamusRam/ColabFold
 # cd ColabFold
 # git checkout high_quality_representations
 # pip install openpyxl
+# pip install GPUtil
+#
+# pip uninstall -y pandas
+# pip install pandas
+
 # python -m colabfold.alphafold_run_on_precomputed_msa_coordination --data-root ../data --start-perc 0 --end-perc 5
 
-# pip install GPUtil

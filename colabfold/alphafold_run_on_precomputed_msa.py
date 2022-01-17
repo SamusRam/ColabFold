@@ -1,7 +1,6 @@
 import re
 import os
 import argparse
-os.environ['XLA_PYTHON_CLIENT_PREALLOCATE'] = 'false'
 os.environ['CUDA_DEVICE_ORDER']='PCI_BUS_ID'
 
 
@@ -21,10 +20,10 @@ parser.add_argument('--jobname', type=str)
 args = parser.parse_args()
 
 os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu_id
+os.environ['XLA_PYTHON_CLIENT_PREALLOCATE'] = 'false'
 
 from colabfold.utils import setup_logging
 from colabfold.batch import get_queries, run_on_precomputed_msa
-import argparse
 import hashlib
 from pathlib import Path
 import tensorflow as tf
@@ -35,6 +34,7 @@ for device in physical_devices:
 
 def add_hash(x,y):
   return x+"_"+hashlib.sha1(y.encode()).hexdigest()[:5]
+
 
 msa_mode = args.msa_mode
 num_models = args.num_models
