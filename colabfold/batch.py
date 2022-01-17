@@ -11,6 +11,8 @@ from pathlib import Path
 from typing import Any, Dict, Tuple, List, Union, Mapping, Optional
 
 import haiku
+import os
+os.environ['OPENBLAS_NUM_THREADS'] = '1'
 import numpy as np
 import pandas
 from jax.lib import xla_bridge
@@ -952,6 +954,7 @@ def run_on_precomputed_msa(
             }
         )
     )
+
 
     use_env = msa_mode == "MMseqs2 (UniRef+Environmental)"
 

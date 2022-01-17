@@ -2,6 +2,7 @@ import pandas as pd
 import subprocess
 import argparse
 import os
+os.environ['OPENBLAS_NUM_THREADS'] = '1'
 import GPUtil
 import time
 
@@ -72,3 +73,7 @@ for _, row in df.iloc[start_i: end_i].iterrows():
 
 # python -m colabfold.alphafold_run_on_precomputed_msa_coordination --data-root ../data --start-perc 0 --end-perc 5
 
+
+
+
+# pip install GPUtil
