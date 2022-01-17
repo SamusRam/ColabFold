@@ -1,6 +1,8 @@
 import re
 import os
 import argparse
+os.environ['CUDA_DEVICE_ORDER']='PCI_BUS_ID'
+
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--gpu-id', type=str, default='0')
