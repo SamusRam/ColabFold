@@ -18,8 +18,8 @@ rf_df = pd.read_csv(os.path.join(args.data_root, 'tps_detection_plants_new_prote
 df = pd.concat((tps_df[['Uniprot ID', 'Amino acid sequence']], rf_df[['Uniprot ID', 'Amino acid sequence']]))
 df.drop_duplicates(subset=['Uniprot ID'], inplace=True)
 df.dropna(inplace=True)
-df['seq_len'] = df['Amino acid sequence'].map(len)
-df.sort_values(by='seq_len', inplace=True)
+# df['seq_len'] = df['Amino acid sequence'].map(len)
+df.sort_values(by='Uniprot ID', inplace=True)
 start_i = int(len(df)*args.start_perc/100)
 end_i = int(len(df)*args.end_perc/100)
 all_available_gpus = []
