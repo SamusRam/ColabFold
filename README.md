@@ -11,6 +11,9 @@
 - 14Nov2021  WARNING "Single-sequence" mode in AlphaFold2_mmseqs2 and AlphaFold2_batch was broken 
 -            starting 11Nov2021. The MMseqs2 MSA was being used regardless of selection.
 + 14Nov2021  "Single-sequence" mode is now fixed.
+- 20Nov2021  WARNING "AMBER" mode in AlphaFold2_mmseqs2 and AlphaFold2_batch was broken 
+-            starting 11Nov2021. Unrelaxed proteins were returned instead.
++ 20Nov2021  "AMBER" is fixed thanks to Kevin Pan
 ```
 -----------------
 
@@ -19,15 +22,15 @@
 | Notebooks | monomers | complexes | mmseqs2 | jackhmmer | templates   |
 | :-------- | -------  | --------- | ------- | --------- | ----------- |
 | [AlphaFold2_mmseqs2](https://colab.research.google.com/github/sokrypton/ColabFold/blob/main/AlphaFold2.ipynb) | Yes | Yes | Yes | No | Yes | 
-| [AlphaFold2_batch](https://colab.research.google.com/github/sokrypton/ColabFold/blob/main/batch/AlphaFold2_batch.ipynb) | Yes | No | Yes | No | Yes | 
+| [AlphaFold2_batch](https://colab.research.google.com/github/sokrypton/ColabFold/blob/main/batch/AlphaFold2_batch.ipynb) | Yes | Yes | Yes | No | Yes | 
 | [RoseTTAFold](https://colab.research.google.com/github/sokrypton/ColabFold/blob/main/RoseTTAFold.ipynb) | Yes | No | Yes | No | No | 
 | [AlphaFold2](https://colab.research.google.com/github/deepmind/alphafold/blob/main/notebooks/AlphaFold.ipynb) (from Deepmind) | Yes | Yes | No | Yes | No | 
 ||
 | **BETA (in development) notebooks** | | | | | |
-| [AlphaFold2_complexes](https://colab.research.google.com/github/sokrypton/ColabFold/blob/main/AlphaFold2_complexes.ipynb) | No | Yes | No | No | No | 
+| [AlphaFold2_advanced](https://colab.research.google.com/github/sokrypton/ColabFold/blob/main/beta/AlphaFold2_advanced.ipynb) | Yes | Yes | Yes | Yes | No |
 ||
 | **OLD retired notebooks** | | | | | |
-| [AlphaFold2_advanced](https://colab.research.google.com/github/sokrypton/ColabFold/blob/main/beta/AlphaFold2_advanced.ipynb) | Yes | Yes | Yes | Yes | No |
+| [AlphaFold2_complexes](https://colab.research.google.com/github/sokrypton/ColabFold/blob/main/AlphaFold2_complexes.ipynb) | No | Yes | No | No | No | 
 | [AlphaFold2_jackhmmer](https://colab.research.google.com/github/sokrypton/ColabFold/blob/main/beta/AlphaFold_wJackhmmer.ipynb) | Yes | No | Yes | Yes | No |
 | [AlphaFold2_noTemplates_noMD](https://colab.research.google.com/github/sokrypton/ColabFold/blob/main/verbose/alphafold_noTemplates_noMD.ipynb) |
 | [AlphaFold2_noTemplates_yesMD](https://colab.research.google.com/github/sokrypton/ColabFold/blob/main/verbose/alphafold_noTemplates_yesMD.ipynb) |
@@ -56,6 +59,8 @@
 
 ### Running locally
 
+_Note: If you need amber or templates, checkout [localcolabfold](https://github.com/YoshitakaMo/localcolabfold) instead_
+
 Install ColabFold using the `pip` commands below. `pip` will resolvei and install all required dependencies and ColabFold should be ready within a few minutes to use. Please check the [JAX documentation](https://github.com/google/jax#pip-installation-gpu-cuda) for how to get JAX to work on your GPU or TPU.
 
 ```shell
@@ -81,9 +86,9 @@ Download and unpack mmseqs (Note: The required features aren't in a release yet,
 
 ```shell
 # This needs a lot of CPU
-colabfold_search.sh mmseqs input_sequences.fasta /path/to/db_folder search_results uniref30_2103_db "" colabfold_envdb_202108_db 1 0 1
+colabfold_search input_sequences.fasta /path/to/db_folder search_results
 # This just does a bit of IO
-python /home/konsti/ColabFold/colabfold/merge_and_split_msas.py search_results msas
+colabfold_split_msas search_results msas
 # This needs a GPU
 colabfold_batch msas predictions
 ```
