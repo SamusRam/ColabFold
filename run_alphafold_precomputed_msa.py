@@ -25,21 +25,6 @@ def add_hash(x,y):
   return x+"_"+hashlib.sha1(y.encode()).hexdigest()[:5]
 
 
-data_root = args.data_root
-tps_df = pd.read_excel(os.path.join(data_root, 'TPS-database_2021_11_04.xlsx'), engine='openpyxl')
-rf_df = pd.read_csv(os.path.join(data_root, 'tps_detection_plants_new_proteins_df.csv'))
-df = pd.concat((tps_df[['Uniprot ID', 'Amino acid sequence']], rf_df[['Uniprot ID', 'Amino acid sequence']]))
-df.drop_duplicates(subset=['Uniprot ID'], inplace=True)
-df.sort_values(by='Uniprot ID', inplace=True)
-# start_i = int(len(df)*args.start_perc/100)
-# end_i = int(len(df)*args.end_perc/100)
-
-
-for _, row in df.iterrows():
-    query_sequence = row['Amino acid sequence'].replace('\w', '').replace('\n', '')
-    jobname = row['Uniprot ID']
-    break
-
 query_sequence = args.query_sequence
 jobname = args.jobname
 # query_sequence = 'PIAQIHILEGRSDEQKETLIREVSEAISRSLDAPLTSVRVIITEMAKGHFGIGGELASK' #@param {type:"string"}

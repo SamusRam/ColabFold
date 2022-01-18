@@ -73,7 +73,7 @@ for _, row in df.iloc[start_i: end_i].iterrows():
     jobname = row['Uniprot ID']
     gpu_allocator.wait_for_free_gpu()
     free_gpu_id = gpu_allocator.get_available_gpu()
-    open_process = subprocess.Popen(['python', '-m', 'run_alphafold_precomputed_msa',
+    open_process = subprocess.call(['python', '-m', 'run_alphafold_precomputed_msa',
                      '--gpu-id', str(free_gpu_id),
                      '--query-sequence', query_sequence,
                      '--jobname', jobname,
