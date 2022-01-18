@@ -55,7 +55,7 @@ import sys
 
 from colabfold.download import download_alphafold_params
 from colabfold.utils import setup_logging
-from colabfold.batch import get_queries, run, set_model_type
+from colabfold.batch import get_queries, run
 
 from colabfold.colabfold import plot_protein
 from pathlib import Path
@@ -74,8 +74,7 @@ def prediction_callback(unrelaxed_protein, length, prediction_result, input_feat
 result_dir="."
 setup_logging(Path(".").joinpath("log.txt"))
 queries, is_complex = get_queries(queries_path)
-model_type = set_model_type(is_complex, model_type)
-download_alphafold_params(model_type, Path("."))
+download_alphafold_params(Path("."))
 run(
     queries=queries,
     result_dir=result_dir,
@@ -91,4 +90,5 @@ run(
     recompile_padding=1.0,
     pair_mode=pair_mode,
     stop_at_score=float(100),
+    rank_mode='auto'
 )
