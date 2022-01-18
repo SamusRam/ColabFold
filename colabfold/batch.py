@@ -982,7 +982,9 @@ def run_on_precomputed_msa(
             else [len(q) for q in query_sequence]
         )
 
-        with open(os.path.join(data_dir, 'precomputed_msa', f'msa_{jobname}.pkl'), 'rb') as f:
+        precomputed_paths = list((Path(data_dir) / 'precomputed_msa').glob(f'msa_{jobname}*'))
+        assert len(precomputed_paths) == 1, f'Problem with precomputed msa for {jobname}'
+        with open(precomputed_paths[0], 'rb') as f:
             np_example = pickle.load(f)
 
         try:
