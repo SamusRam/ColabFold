@@ -97,7 +97,7 @@ queries, is_complex = get_queries(queries_path)
 
 
 run_on_precomputed_msa(
-    queries=query_sequence,
+    queries=queries,
     result_dir=result_dir,
     use_templates=use_templates,
     use_amber=use_amber,
