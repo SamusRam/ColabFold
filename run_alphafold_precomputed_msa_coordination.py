@@ -35,7 +35,7 @@ class GpuAllocator:
         self.process_id_2_gpu_id = dict()
 
     def check_dead_processes(self):
-        for process in self.process_id_2_gpu_id.keys():
+        for process in list(self.process_id_2_gpu_id.keys()):
             if process.poll() is not None:
                 self.available_gpus.add(self.process_id_2_gpu_id[process])
                 del self.process_id_2_gpu_id[process]
