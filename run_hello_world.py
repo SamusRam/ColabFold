@@ -106,10 +106,10 @@ run_on_precomputed_msa(
     num_recycles=num_recycles,
     model_order=[1, 2, 3, 4, 5],
     is_complex=is_complex,
-    data_dir=Path("."),
     keep_existing_results=False,
     recompile_padding=1.0,
     pair_mode=pair_mode,
     stop_at_score=float(100),
-    rank_mode='auto'
+    rank_mode='auto',
+    data_dir=Path('../data')
 )
