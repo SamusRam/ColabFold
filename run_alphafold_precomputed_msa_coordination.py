@@ -4,6 +4,7 @@ import argparse
 import os
 os.environ['OPENBLAS_NUM_THREADS'] = '1'
 import GPUtil
+import psutil
 import time
 
 parser = argparse.ArgumentParser()
@@ -23,15 +24,6 @@ start_i = int(len(df)*args.start_perc/100)
 end_i = int(len(df)*args.end_perc/100)
 all_available_gpus = []
 
-def check_pid(pid):
-    """ Check For the existence of a unix pid. """
-    try:
-        os.kill(pid, 0)
-    except OSError:
-        return False
-    else:
-        return True
-
 
 class GpuAllocator:
 
@@ -45,7 +37,7 @@ class GpuAllocator:
 
     def check_dead_processes(self):
         for process_id in self.process_id_2_gpu_id.keys():
-            if not check_pid(process_id):
+            if not psutil.pid_exists(process_id):
                 self.available_gpus.add(self.process_id_2_gpu_id[process_id])
                 del self.process_id_2_gpu_id[process_id]
 
