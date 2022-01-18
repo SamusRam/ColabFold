@@ -982,7 +982,14 @@ def run_on_precomputed_msa(
             else [len(q) for q in query_sequence]
         )
 
-        precomputed_paths = list((Path(data_dir) / 'precomputed_msa').glob(f'msa_{jobname.split("_")[0]}*'))
+        uniprot_id = jobname.split("_")[0]
+
+        stored_results = list(Path(result_dir).glob(f'{uniprot_id}*_representations.pkl'))
+        if len(stored_results) > 1:
+            logger.info(f'{uniprot_id} already computed, skipping...')
+            continue
+
+        precomputed_paths = list((Path(data_dir) / 'precomputed_msa').glob(f'msa_{uniprot_id}*'))
         assert len(precomputed_paths) == 1, f'Problem with precomputed msa for {jobname}'
         with open(precomputed_paths[0], 'rb') as f:
             np_example = pickle.load(f)

@@ -17,6 +17,7 @@ tps_df = pd.read_csv(os.path.join(args.data_root, 'TPS-database_2021_11_04.csv')
 rf_df = pd.read_csv(os.path.join(args.data_root, 'tps_detection_plants_new_proteins_df.csv'))
 df = pd.concat((tps_df[['Uniprot ID', 'Amino acid sequence']], rf_df[['Uniprot ID', 'Amino acid sequence']]))
 df.drop_duplicates(subset=['Uniprot ID'], inplace=True)
+df.dropna(inplace=True)
 df['seq_len'] = df['Amino acid sequence'].map(len)
 df.sort_values(by='seq_len', inplace=True)
 start_i = int(len(df)*args.start_perc/100)
@@ -64,9 +65,12 @@ for _, row in df.iloc[start_i: end_i].iterrows():
     jobname = row['Uniprot ID']
     gpu_allocator.wait_for_free_gpu()
     free_gpu_id = gpu_allocator.get_available_gpu()
-    open_process = subprocess.Popen(['python', '-m', 'run_alphafold_precomputed_msa',
-                     '--gpu-id', str(free_gpu_id),
-                     '--query-sequence', query_sequence,
-                     '--jobname', jobname,
-                      '--data-root', args.data_root])
+    try:
+        open_process = subprocess.Popen(['python', '-m', 'run_alphafold_precomputed_msa',
+                         '--gpu-id', str(free_gpu_id),
+                         '--query-sequence', query_sequence,
+                         '--jobname', jobname,
+                          '--data-root', args.data_root])
+    except TypeError:
+        continue
     gpu_allocator.assign_process_to_gpu(open_process, free_gpu_id)
