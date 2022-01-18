@@ -37,6 +37,7 @@ class GpuAllocator:
 
     def check_dead_processes(self):
         for process_id in self.process_id_2_gpu_id.keys():
+            print(process_id, 'psutil.pid_exists(process_id)', psutil.pid_exists(process_id))
             if not psutil.pid_exists(process_id):
                 self.available_gpus.add(self.process_id_2_gpu_id[process_id])
                 del self.process_id_2_gpu_id[process_id]
