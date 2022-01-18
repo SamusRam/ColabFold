@@ -18,7 +18,6 @@ parser.add_argument('--data-root', type=str, default='../data')
 args = parser.parse_args()
 
 os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu_id
-os.environ['XLA_PYTHON_CLIENT_PREALLOCATE'] = 'false'
 
 
 def add_hash(x,y):
