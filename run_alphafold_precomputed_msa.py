@@ -3,14 +3,29 @@ import re
 import hashlib
 import random
 import pandas as pd
+import os
+import argparse
+os.environ['CUDA_DEVICE_ORDER']='PCI_BUS_ID'
+
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--gpu-id', type=str, default='0')
+parser.add_argument('--query-sequence', type=str)
+parser.add_argument('--jobname', type=str)
+parser.add_argument('--data-root', type=str, default='../data')
+
+
+args = parser.parse_args()
+
+os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu_id
+os.environ['XLA_PYTHON_CLIENT_PREALLOCATE'] = 'false'
+
 
 def add_hash(x,y):
   return x+"_"+hashlib.sha1(y.encode()).hexdigest()[:5]
 
 
-
-
-data_root = '../data'
+data_root = args.data_root
 tps_df = pd.read_excel(os.path.join(data_root, 'TPS-database_2021_11_04.xlsx'), engine='openpyxl')
 rf_df = pd.read_csv(os.path.join(data_root, 'tps_detection_plants_new_proteins_df.csv'))
 df = pd.concat((tps_df[['Uniprot ID', 'Amino acid sequence']], rf_df[['Uniprot ID', 'Amino acid sequence']]))
@@ -24,6 +39,9 @@ for _, row in df.iterrows():
     query_sequence = row['Amino acid sequence'].replace('\w', '').replace('\n', '')
     jobname = row['Uniprot ID']
     break
+
+query_sequence = args.query_sequence
+jobname = args.jobname
 # query_sequence = 'PIAQIHILEGRSDEQKETLIREVSEAISRSLDAPLTSVRVIITEMAKGHFGIGGELASK' #@param {type:"string"}
 #@markdown  - Use `:` to specify inter-protein chainbreaks for **modeling complexes** (supports homo- and hetro-oligomers). For example **PI...SK:PI...SK** for a mono-dimer
 
@@ -89,12 +107,10 @@ def prediction_callback(unrelaxed_protein, length, prediction_result, input_feat
   plt.show()
   plt.close()
 
-result_dir="."
-setup_logging(Path(".").joinpath("log.txt"))
+result_dir="alphafold_results"
+setup_logging(Path("alphafold_results").joinpath("log.txt"))
 queries, is_complex = get_queries(queries_path)
 # download_alphafold_params(Path("."))
-
-
 
 run_on_precomputed_msa(
     queries=queries,
