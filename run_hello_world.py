@@ -7,11 +7,7 @@ import pandas as pd
 def add_hash(x,y):
   return x+"_"+hashlib.sha1(y.encode()).hexdigest()[:5]
 
-query_sequence = 'PIAQIHILEGRSDEQKETLIREVSEAISRSLDAPLTSVRVIITEMAKGHFGIGGELASK' #@param {type:"string"}
-#@markdown  - Use `:` to specify inter-protein chainbreaks for **modeling complexes** (supports homo- and hetro-oligomers). For example **PI...SK:PI...SK** for a mono-dimer
 
-# remove whitespaces
-query_sequence = "".join(query_sequence.split())
 
 
 data_root = '../data'
@@ -28,7 +24,11 @@ for _, row in df.iterrows():
     query_sequence = row['Amino acid sequence'].replace('\w', '').replace('\n', '')
     jobname = row['Uniprot ID']
     break
+# query_sequence = 'PIAQIHILEGRSDEQKETLIREVSEAISRSLDAPLTSVRVIITEMAKGHFGIGGELASK' #@param {type:"string"}
+#@markdown  - Use `:` to specify inter-protein chainbreaks for **modeling complexes** (supports homo- and hetro-oligomers). For example **PI...SK:PI...SK** for a mono-dimer
 
+# remove whitespaces
+query_sequence = "".join(query_sequence.split())
 
 # jobname = 'test' #@param {type:"string"}
 # remove whitespaces
