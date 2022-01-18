@@ -4,7 +4,6 @@ import argparse
 import os
 os.environ['OPENBLAS_NUM_THREADS'] = '1'
 import GPUtil
-import psutil
 import time
 
 parser = argparse.ArgumentParser()
@@ -36,14 +35,13 @@ class GpuAllocator:
         self.process_id_2_gpu_id = dict()
 
     def check_dead_processes(self):
-        for process_id in self.process_id_2_gpu_id.keys():
-            print(process_id, 'psutil.pid_exists(process_id)', psutil.pid_exists(process_id))
-            if not psutil.pid_exists(process_id):
-                self.available_gpus.add(self.process_id_2_gpu_id[process_id])
-                del self.process_id_2_gpu_id[process_id]
+        for process in self.process_id_2_gpu_id.keys():
+            if process.poll() is not None:
+                self.available_gpus.add(self.process_id_2_gpu_id[process])
+                del self.process_id_2_gpu_id[process]
 
-    def assign_process_to_gpu(self, process_id, gpu_id):
-        self.process_id_2_gpu_id[process_id] = gpu_id
+    def assign_process_to_gpu(self, process, gpu_id):
+        self.process_id_2_gpu_id[process] = gpu_id
         self.available_gpus.remove(gpu_id)
 
     def is_gpu_available(self):
@@ -71,4 +69,4 @@ for _, row in df.iloc[start_i: end_i].iterrows():
                      '--query-sequence', query_sequence,
                      '--jobname', jobname,
                       '--data-root', args.data_root])
-    gpu_allocator.assign_process_to_gpu(open_process.pid, free_gpu_id)
+    gpu_allocator.assign_process_to_gpu(open_process, free_gpu_id)
