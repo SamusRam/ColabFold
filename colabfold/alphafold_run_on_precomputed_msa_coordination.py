@@ -27,18 +27,19 @@ all_available_gpus = []
 def get_free_gpu_id():
     global all_available_gpus
     if len(all_available_gpus) == 0:
+        time.sleep(60)
         all_available_gpus = GPUtil.getAvailable(order='PCI_BUS_ID',
                                              limit=100, # big M
                                              maxLoad=0.5,
                                              maxMemory=0.5,
                                              includeNan=False, excludeID=[], excludeUUID=[])
         while len(all_available_gpus) == 0:
-            time.sleep(60)
             all_available_gpus = GPUtil.getAvailable(order='PCI_BUS_ID',
                                              limit=100, # big M
                                              maxLoad=0.1,
                                              maxMemory=0.1,
                                              includeNan=False, excludeID=[], excludeUUID=[])
+
     return all_available_gpus.pop()
 
 
