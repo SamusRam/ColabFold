@@ -23,33 +23,59 @@ start_i = int(len(df)*args.start_perc/100)
 end_i = int(len(df)*args.end_perc/100)
 all_available_gpus = []
 
+def check_pid(pid):
+    """ Check For the existence of a unix pid. """
+    try:
+        os.kill(pid, 0)
+    except OSError:
+        return False
+    else:
+        return True
 
-def get_free_gpu_id():
-    global all_available_gpus
-    if len(all_available_gpus) == 0:
-        time.sleep(30)
-        all_available_gpus = GPUtil.getAvailable(order='PCI_BUS_ID',
+
+class GpuAllocator:
+
+    def __init__(self):
+        self.available_gpus = set(GPUtil.getAvailable(order='PCI_BUS_ID',
                                              limit=100, # big M
                                              maxLoad=0.5,
                                              maxMemory=0.5,
-                                             includeNan=False, excludeID=[], excludeUUID=[])
-        while len(all_available_gpus) == 0:
-            all_available_gpus = GPUtil.getAvailable(order='PCI_BUS_ID',
-                                             limit=100, # big M
-                                             maxLoad=0.1,
-                                             maxMemory=0.1,
-                                             includeNan=False, excludeID=[], excludeUUID=[])
-            time.sleep(0.5)
+                                             includeNan=False, excludeID=[], excludeUUID=[]))
+        self.process_id_2_gpu_id = dict()
 
-    return all_available_gpus.pop()
+    def check_dead_processes(self):
+        for process_id in self.process_id_2_gpu_id.keys():
+            if not check_pid(process_id):
+                self.available_gpus.add(self.process_id_2_gpu_id[process_id])
+                del self.process_id_2_gpu_id[process_id]
 
+    def assign_process_to_gpu(self, process_id, gpu_id):
+        self.process_id_2_gpu_id[process_id] = gpu_id
+        self.available_gpus.remove(gpu_id)
+
+    def is_gpu_available(self):
+        return len(self.available_gpus) > 0
+
+    def get_available_gpu(self):
+        assert self.is_gpu_available(), 'No gpus'
+        return list(self.available_gpus)[0]
+
+    def wait_for_free_gpu(self):
+        while not self.is_gpu_available():
+            self.check_dead_processes()
+            time.sleep(5)
+
+
+gpu_allocator = GpuAllocator()
 
 for _, row in df.iloc[start_i: end_i].iterrows():
     query_sequence = row['Amino acid sequence'].replace('\w', '').replace('\n', '')
     jobname = row['Uniprot ID']
-    free_gpu_id = get_free_gpu_id()
-    subprocess.Popen(['python', '-m', 'run_alphafold_precomputed_msa',
+    gpu_allocator.wait_for_free_gpu()
+    free_gpu_id = gpu_allocator.get_available_gpu()
+    open_process = subprocess.Popen(['python', '-m', 'run_alphafold_precomputed_msa',
                      '--gpu-id', str(free_gpu_id),
                      '--query-sequence', query_sequence,
                      '--jobname', jobname,
                       '--data-root', args.data_root])
+    gpu_allocator.assign_process_to_gpu(open_process.pid, free_gpu_id)
