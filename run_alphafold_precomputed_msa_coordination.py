@@ -39,6 +39,7 @@ def get_free_gpu_id():
                                              maxLoad=0.1,
                                              maxMemory=0.1,
                                              includeNan=False, excludeID=[], excludeUUID=[])
+            time.sleep(0.5)
 
     return all_available_gpus.pop()
 
@@ -47,7 +48,7 @@ for _, row in df.iloc[start_i: end_i].iterrows():
     query_sequence = row['Amino acid sequence'].replace('\w', '').replace('\n', '')
     jobname = row['Uniprot ID']
     free_gpu_id = get_free_gpu_id()
-    subprocess.call(['python', '-m', 'run_alphafold_precomputed_msa',
+    subprocess.Popen(['python', '-m', 'run_alphafold_precomputed_msa',
                      '--gpu-id', str(free_gpu_id),
                      '--query-sequence', query_sequence,
                      '--jobname', jobname,
