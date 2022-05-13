@@ -1,8 +1,11 @@
-import numpy as np
-import pandas as pd
-import subprocess
 import argparse
 import os
+import subprocess
+
+import numpy as np
+import pandas as pd
+
+# alphafold-specific setup
 os.environ['OPENBLAS_NUM_THREADS'] = '1'
 import GPUtil
 import time
@@ -17,13 +20,11 @@ result_dir="alphafold_results"
 
 ready_ids = {path.name.split('_')[0] for path in Path(result_dir).glob(f'*_representations.pkl')}
 
-# tps_df = pd.read_excel(os.path.join(args.data_root, 'TPS-database_2021_11_04.xlsx'), engine='openpyxl')
 tps_df = pd.read_csv(os.path.join(args.data_root, 'TPS-database_2021_11_04.csv'))
 rf_df = pd.read_csv(os.path.join(args.data_root, 'tps_detection_plants_new_proteins_df.csv'))
 df = pd.concat((tps_df[['Uniprot ID', 'Amino acid sequence']], rf_df[['Uniprot ID', 'Amino acid sequence']]))
 df.drop_duplicates(subset=['Uniprot ID'], inplace=True)
 df.dropna(inplace=True)
-# df['seq_len'] = df['Amino acid sequence'].map(len)
 
 df = df[np.logical_not(df['Uniprot ID'].isin(ready_ids))]
 df.sort_values(by='Uniprot ID', inplace=True)
@@ -74,10 +75,10 @@ for _, row in df.iloc[start_i: end_i].iterrows():
     free_gpu_id = gpu_allocator.get_available_gpu()
     try:
         open_process = subprocess.Popen(['python', '-m', 'run_alphafold_precomputed_msa',
-                         '--gpu-id', str(free_gpu_id),
-                         '--query-sequence', query_sequence,
-                         '--jobname', jobname,
-                          '--data-root', args.data_root])
-    except TypeError:
+                                         '--gpu-id', str(free_gpu_id),
+                                         '--query-sequence', query_sequence,
+                                         '--jobname', jobname,
+                                         '--data-root', args.data_root])
+    except TypeError: # alphafold specific error
         continue
     gpu_allocator.assign_process_to_gpu(open_process, free_gpu_id)
